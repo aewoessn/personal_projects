@@ -1,0 +1,22 @@
+<scene>
+    <object type = "model">
+        <name value="container1"/>
+        <filename value="primitives\cube.obj"/>
+        <position x = "0.0" y = "0.0" z = "0.0" />
+        <rotation x = "0.0" y = "0.0" z = "0.0" />
+        <scale    x = "1.0" y = "1.0" z = "1.0" />
+        <shader type = "vertex" />
+        <shader type = "fragment" />
+        <material value = "primitives\container.mtl" />
+    </object> 
+    <object type = "model">
+        <name value="container2"/>
+        <filename value="primitives\cube.obj"/>
+        <position x = "5.0" y = "0.0" z = "-5.0" />
+        <rotation x = "0.0" y = "0.0" z = "0.0" />
+        <scale    x = "0.2" y = "0.2" z = "0.2" />
+        <shader type = "vertex" />
+        <shader type = "fragment" />
+        <material value = "primitives\container2.mtl" />
+    </object>
+</scene>                    

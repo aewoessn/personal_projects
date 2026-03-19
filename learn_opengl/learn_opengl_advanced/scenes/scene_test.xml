@@ -1,0 +1,26 @@
+<scene>
+    <object name = "cube1">
+        <uri value = "./assets/cube/cube.obj"/>
+        <translation x = "0.0" y = "0.0" z = "0.0" />
+        <rotation x = "0.0" y = "0.0" z = "0.0" />
+        <scale    x = "1.0" y = "1.0" z = "1.0" />
+        <vertexShader value = "./assets/cube/cube.vert" />
+        <fragmentShader value = "./assets/cube/cube.frag"/>
+    </object> 
+    <object name = "backpack">
+        <uri value = "./assets/backpack/backpack.obj"/>
+        <translation x = "-2.0" y = "0.0" z = "0.0" />
+        <rotation x = "0.0" y = "0.0" z = "0.0" />
+        <scale    x = "0.25" y = "0.5" z = "0.25" />
+        <vertexShader value = "./assets/backpack/backpack.vert" />
+        <fragmentShader value = "./assets/backpack/backpack.frag"/>
+    </object> 
+    <object name = "cube2">
+        <uri value = "./assets/cube/cube.obj"/>
+        <translation x = "5.0" y = "0.0" z = "-5.0" />
+        <rotation x = "0.0" y = "0.0" z = "0.0" />
+        <scale    x = "0.5" y = "2.0" z = "0.5" />
+        <vertexShader value = "./assets/cube/cube.vert" />
+        <fragmentShader value = "./assets/cube/cube.frag"/>
+    </object>
+</scene>                    

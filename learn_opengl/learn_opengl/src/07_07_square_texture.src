@@ -1,0 +1,239 @@
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <iostream>
+#include <cmath> 
+#include <shader.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void processInput(GLFWwindow *window);
+
+short WIDTH = 800;
+short HEIGHT = 600;
+
+int main() {
+
+    // Initialize GLFW
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    // Create a window object
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Hi mom", NULL, NULL);
+
+    if (window == NULL) {
+        std::cout << "Did not create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+
+    glfwMakeContextCurrent(window); // forces window to be main context on current thread
+
+    // Check to see if GLAD can be loaded correctly
+    if (!gladLoadGLLoader( (GLADloadproc) glfwGetProcAddress)) {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    // Set the dimensions of the current viewport and set callback in case the window is resized
+    glViewport(0, 0, WIDTH, HEIGHT);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    // Compile and link shaders
+    Shader currentShader("./shaders/07_07_square_multiple.vert", "./shaders/07_07_square_multiple.frag");
+
+    //--- Textures ---//
+    // Generate the texture
+    unsigned int texture1;
+    glGenTextures(1, &texture1);   
+    glBindTexture(GL_TEXTURE_2D, texture1);
+
+    // Load texture
+    int texWidth, texHeight, nrChannels;
+    stbi_set_flip_vertically_on_load(true);
+    
+    unsigned char *data = stbi_load("./textures/container.jpg", &texWidth, &texHeight, &nrChannels, 0);
+
+    if (data) {
+        // Set parameters for texture
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }    
+
+    // Release the file
+    stbi_image_free(data);
+
+    // Generate the texture
+    unsigned int texture2;
+    glGenTextures(1, &texture2);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+
+    // Load texture 2
+    data = stbi_load("./textures/awesomeface.png", &texWidth, &texHeight, &nrChannels, 0);
+
+    if (data) {
+        // Set parameters for texture
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texWidth, texHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }    
+
+    // Release the file
+    stbi_image_free(data);    
+    
+    // Bind textures to corresponding texture units
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+    
+    //--- ---//
+
+    // Set vertex attributes
+    float vertAttributes[] = {
+        // Position         // Color          // Texture 
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+        -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+         0.5f,  0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+         0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f
+    };
+
+    int faceIndices[] = {
+        0, 1, 2,
+        0, 2, 3
+    };
+
+    // Define the vertex array object (VAO)
+    // This stores the attributes associated with a vertex array   
+    //
+    // Define the vertex buffer object (VBO)
+    // This creates memory on GPU, tells OpenGL how to interpret the memory, and how to send the data to the GPU.
+    // VBO -> GL_ARRAY_BUFFER
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    // Specify the size of the buffer and fill in the buffer
+    // GL_STREAM_DRAW -> Writes data once and is read a few times
+    // GL_STATIC_DRAW -> Writes data once and is read many times
+    // GL_DYNAMIC_DRAW -> Writes data many times and is read many times
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertAttributes), vertAttributes, GL_STATIC_DRAW);
+
+    // Define the element buffer object (EBO)
+    // This stores the indices used when drawing vertices
+    unsigned int EBO;
+    glGenBuffers(1, &EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(faceIndices), faceIndices, GL_STATIC_DRAW);
+
+    // Specify how to interpret the vertex data and enable the "location" for the vertex shader
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*) (3*sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*) (6*sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+    // Activate the shader program to be used 
+    // Set the uniforms associated with the shader program (if applicable)
+    currentShader.use();    
+    currentShader.setInt("inputTexture1", 0);
+    currentShader.setInt("inputTexture2", 1);
+
+    // FPS counter initialization
+    int startTime = (int) floor(glfwGetTime());
+    int currentTime;
+    int frameCounter = 0;
+    char buffer[sizeof(int)+5];
+    
+    // Rendering loop
+    while (!glfwWindowShouldClose(window)) {
+
+        // Try to make an FPS counter
+        currentTime = (int) floor(glfwGetTime());
+        if (currentTime == startTime) {
+            frameCounter++;
+        } else {
+            startTime = currentTime;
+            
+            sprintf(buffer, "FPS: %i", frameCounter);
+            glfwSetWindowTitle(window, buffer); 
+            frameCounter = 0;
+        }
+
+        // Input for window
+        processInput(window);
+
+        // Clear the color buffer
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Attach the vertex array object
+        // Draw arrays
+        //currentShader.use();
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        // Events and frame buffer swap
+        glfwSwapBuffers(window); // swap between frame buffers
+        glfwPollEvents(); // check to see if any event are triggered
+    }
+
+    glfwTerminate();
+    return 0;
+}
+
+// Frame buffer resizing call back
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    WIDTH = width;
+    HEIGHT = height;
+    glViewport(0, 0, width, height);
+}
+
+// Input handler
+void processInput(GLFWwindow* window) {
+
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, true);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        GLint polygonMode[2];
+        glGetIntegerv(GL_POLYGON_MODE, polygonMode);
+        
+        float duration = 0.2;
+        float startTime = glfwGetTime();
+
+        if (polygonMode[0] == GL_FILL) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                } else if (polygonMode[0] == GL_LINE) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+        } else if (polygonMode[0] == GL_POINT) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+
+        // Delay whole program to reject frame-to-frame inputs
+        while ((glfwGetTime() - startTime) < duration) { }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS) {
+        // Try to save image
+        int* buffer = new int[ 800 * 600 * 3 ];
+        glReadPixels( 0, 0, 800, 600, GL_RGB, GL_UNSIGNED_BYTE, buffer );
+
+        FILE   *out = fopen("out.tga", "w");
+        short  TGAhead[] = {0, 2, 0, 0, 0, 0, WIDTH, HEIGHT, 24};
+        fwrite(&TGAhead, sizeof(TGAhead), 1, out);
+        fwrite(buffer, 3 * WIDTH * HEIGHT, 1, out);
+        fclose(out);
+
+    }
+}
